@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LASTPRINT</title>
+</head>
+<body>
+<div class="app alpha" id="app">
+  <header>
+    <div class="brand">LASTPRINT</div>
+    <div class="live"><i></i><span id="modeTag">PAPER</span></div>
+    <nav class="views" aria-label="Room">
+      <button class="on" data-view="office">OFFICE</button>
+      <button data-view="farm">FARM</button>
+      <button data-view="alpha">ALPHA</button>
+      <button data-view="night">NIGHT</button>
+    </nav>
+    <div class="tickers" id="tickers"></div>
+    <div class="hdr-stats">
+      <div class="chip"><span>EQ</span><b id="eq">$1000.00</b></div>
+      <div class="chip"><span>CASH</span><b id="cashH">$1000.00</b></div>
+      <div class="chip"><span>P&L</span><b id="pnl">+$0.00</b></div>
+      <div class="chip"><span>REAL</span><b id="real">+$0.00</b></div>
+      <div class="chip"><span>OPEN</span><b id="openN">0</b></div>
+      <div class="chip"><span>BUY</span><b id="bought">0</b></div>
+      <div class="chip"><span>SELL</span><b id="sold">0</b></div>
+    </div>
+    <div class="hdr-actions">
+      <div id="watchChip">WATCH —</div>
+      <div id="saveChip">DISK —</div>
+      <button class="go" id="approveBtn" disabled>APPROVE</button>
+      <button id="ticketBtn">TICKET</button>
+      <button id="diskBtn">DISK</button>
+      <button id="setBtn">WATCH</button>
+      <div id="clock"></div>
+    </div>
+  </header>
+
+  <div class="trench-bar" id="trenchBar">
+    <b>TRENCH</b>
+    <span>SCAN <em id="scanN">0</em></span>
+    <span>KILL <em id="killN">0</em> <em id="killPct">—</em></span>
+    <span>REFUSE <em id="refused">0</em></span>
+    <span class="opt">BUY $150 · 6 bags · pump MC · paper</span>
+    <span id="pulseChip">PULSE —</span>
+    <span id="streakChip">STREAK 0</span>
+    <span id="coolChip">GATE OPEN</span>
+    <span class="opt" id="metaChip">META $15k+ · $2M needs vol</span>
+    <span id="wrChip">WR —</span>
+    <span id="goalChip">GOAL $35/h</span>
+    <span id="liveChip">PAPER · LIVE SEND OFF</span>
+    <span class="die">$0 = dead · paper</span>
+  </div>
+
+  <div class="stage">
+    <aside class="rail rail-book" id="bookRail">
+      <section class="book-hero">
+        <div class="hero-eq"><span>EQUITY</span><b id="eqBig">$1000.00</b></div>
+        <div class="hero-meta">
+          <span>paper vault · solana</span>
+          <span id="cash" class="sr-num">VAULT $1000.00</span>
+        </div>
+        <div class="wallet-row" id="walletRow">
+          <em>PAPER WALLET</em>
+          <button type="button" id="walletCopy" title="copy paper address">—</button>
+        </div>
+        <div class="pit-well" id="pitWell">
+          <div class="curve-head"><span>BONDING CURVE</span><b id="curveTag">—</b></div>
+          <svg id="curveSvg" viewBox="0 0 200 72" preserveAspectRatio="none" aria-hidden="true"></svg>
+          <div class="curve-bar"><i id="curveFill"></i></div>
+          <div class="curve-meta" id="curveMeta">paper · pump.fun · live send off</div>
+        </div>
+      </section>
+      <section data-pane="ticket"><h3>TICKET</h3><div id="pipe"></div></section>
+      <section data-pane="pos" class="pos-pane"><h3>POSITIONS</h3><div id="pos"></div><h3 class="hist-h">TRADE HISTORY</h3><div id="histBox" class="hist"></div></section>
+    </aside>
+
+    <div class="office-wrap">
+      <div class="sky">
+        <div class="moon"></div>
+        <div class="chain l"></div><div class="chain r"></div>
+        <div class="big-board"><b>LASTPRINT · pump.fun · PAPER</b><div class="rows" id="boardRows"></div></div>
+      </div>
+      <div class="tape"><span id="tapeScroll">LASTPRINT TRENCHER PAPER — $25 MIN · 0.1 SOL MAX · NEVER ADD · STOP −50% · $0 = DEAD — LIVE SEND OFF — </span></div>
+      <div class="room" id="room">
+        <div class="koth" id="kothBar"><span class="ph">PF</span><div><div class="tag">KOTH — waiting tape</div><div class="meta">pump.fun paper</div></div></div>
+        <div class="pit-wall" id="pitWall">
+          <div class="pit-window" id="pitWindow" aria-hidden="true">
+            <div class="scene" id="pitScene" data-scene="dusk">
+              <div class="sky-orb"></div>
+              <div class="stars"></div>
+              <div class="clouds"></div>
+              <div class="city"></div>
+              <div class="rain"></div>
+              <div class="neon-sign">PUMP</div>
+            </div>
+            <div class="muntin"></div>
+            <div class="sill"></div>
+          </div>
+          <div class="wall-plaque"><span>LASTPRINT</span><em>paper floor</em></div>
+          <div class="pit-tv" id="pitTv">
+            <div class="tv-bezel">
+              <div class="tv-glass">
+                <canvas id="tvChart"></canvas>
+                <div class="tv-news">
+                  <div class="tv-bug"><i></i> TRENCH NEWS <em>LIVE</em></div>
+                  <div class="tv-headline" id="tvHeadline">WAITING TAPE</div>
+                  <div class="tv-crawl"><span id="tvCrawl">LASTPRINT PAPER — $25 MIN · LIVE SEND OFF — </span></div>
+                </div>
+                <div class="tv-scan"></div>
+              </div>
+              <i class="tv-led"></i>
+            </div>
+            <div class="tv-tag" id="tvTag">CH. 7  TRENCH</div>
+          </div>
+        </div>
+        <div class="agent-layer" id="agentLayer">
+          <div class="floors" id="floorBtns">
+            <button class="on" data-floor="CRYPTO">CRYPTO</button>
+            <button data-floor="MEME">MEME</button>
+            <button data-floor="INDEX">INDEX</button>
+          </div>
+        </div>
+        <div class="floor-dock">
+          <div class="coin-strip" id="coinStrip"></div>
+          <nav class="shift" id="shiftBar" aria-label="Desk shift">
+            <button type="button" data-view="farm">SCOUT</button>
+            <i></i>
+            <button type="button" data-view="office">AUDIT</button>
+            <i></i>
+            <button type="button" data-view="night">CHECK</button>
+            <i></i>
+            <button type="button" data-view="alpha">FILL</button>
+            <em id="shiftLine">scout → auditor → narrative → checker → paper fill</em>
+          </nav>
+        </div>
+      </div>
+      <div class="hint" id="hint">live send off</div>
+      <div class="hint" id="feedsBar">FEEDS —</div>
+    </div>
+
+    <aside class="rail rail-intel" id="intelRail">
+      <div class="rail-tabs" id="railTabs">
+        <button class="on" data-rail="funnel">PIPE</button>
+        <button data-rail="fomo">FOMO</button>
+        <button data-rail="wallets">WALS</button>
+        <button data-rail="hist">TAPE</button>
+        <button data-rail="chat">CHAT</button>
+        <button data-rail="learn">LEARN</button>
+      </div>
+      <section class="show" data-pane="funnel"><h3>PIPELINE</h3><div id="funnelBox">scout → auditor → flow → social → checker</div><h3>HUDDLE</h3><div id="huddleBox">desk has not huddled yet</div></section>
+      <section data-pane="fomo"><h3>FOMO</h3><div id="fomoList"></div></section>
+      <section data-pane="wallets"><h3>WALLETS</h3><div id="walList"></div></section>
+      <section data-pane="hist"><h3>TRADE ARCHIVE</h3><div id="histStats"></div><div id="histFull" class="hist hist-full"></div><h3>JOURNAL</h3><div id="feed" class="feed"></div></section>
+      <section data-pane="chat"><h3>DESK CHAT</h3><div id="chat" class="feed"></div></section>
+      <section data-pane="learn"><h3>LEARN</h3><div id="learnBox"></div><h3>AGENTS</h3><div id="roster"></div></section>
+    </aside>
+  </div>
+
+  <footer>
+    <div class="chart-box eq"><label id="c4l">EQUITY</label><canvas id="c4"></canvas></div>
+    <div class="chart-box"><label id="c1l">MC</label><canvas id="c1"></canvas></div>
+    <div class="chart-box"><label id="c2l">MC</label><canvas id="c2"></canvas></div>
+    <div class="chart-box"><label id="c3l">MC</label><canvas id="c3"></canvas></div>
+    <div class="chart-box"><label id="c5l">TAPE VOL</label><canvas id="c5"></canvas></div>
+    <div class="chart-box pnl"><label id="c6l">TRADES</label><canvas id="c6"></canvas></div>
+  </footer>
+</div>
+
+<div class="overlay-board fomo" id="fomoBoard" hidden><b>FOMO</b><div id="fomoRows"></div></div>
+<div class="overlay-board whales" id="whaleBoard" hidden><b>TOP WALLETS</b><div id="whaleRows"></div></div>
+
+<div class="modal" id="setModal">
+  <div class="card">
+    <h2>WALLET · PHANTOM · LIVE SWITCH</h2>
+    <p class="warn">No seeds. Phantom signs. Live send is OFF until you arm it. Auto-desk stays paper unless AUTO LIVE is on.</p>
+    <div class="row"><span>Phantom</span><div>
+      <button class="go" id="phConnect" type="button">CONNECT PHANTOM</button>
+      <button id="phDisconnect" type="button">DISCONNECT</button>
+    </div></div>
+    <div class="row"><span>Connected</span><input id="watchAddr" placeholder="connect Phantom or paste public address" autocomplete="off" /></div>
+    <div class="row"><span>Live swaps</span><label><input type="checkbox" id="liveSend" /> Jupiter buy/sell via Phantom (real SOL)</label></div>
+    <div class="row"><span>AUTO LIVE</span><label><input type="checkbox" id="liveAuto" /> desk spends SOL on huddle fills — type AUTO below</label></div>
+    <div class="row"><span>Type AUTO</span><input id="liveAutoWord" placeholder="leave blank · type AUTO to arm auto-spend" autocomplete="off" /></div>
+    <div class="row"><span>Venue</span>
+      <select id="venue"><option value="paper">LASTPRINT paper</option><option value="hl-test">Hyperliquid testnet (tape only)</option><option value="binance-test">Binance testnet (tape only)</option></select>
+    </div>
+    <div class="row"><span>Start cash</span><input id="startCash" type="number" value="1000" /></div>
+    <div class="row"><span>Risk / ticket %</span><input id="riskPct" type="number" value="0.5" step="0.1" /></div>
+    <div class="row"><span>Taker fee bps</span><input id="feeBps" type="number" value="80" /></div>
+    <div class="row"><span>Slippage bps</span><input id="slipBps" type="number" value="100" /></div>
+    <div class="row"><span></span><div>
+      <button class="go" id="saveKeys">SAVE WATCH</button>
+      <button id="closeSet">CLOSE</button>
+    </div></div>
+  </div>
+</div>
+<div class="modal" id="diskModal">
+  <div class="card">
+    <h2>SHARED COMPUTER DISK</h2>
+    <p class="card-copy">Local twin of the Grok Bot shared disk. Same filenames the Bots should read and write.</p>
+    <pre id="diskPre"></pre>
+    <div class="card-actions">
+      <button class="go" id="exportJ">EXPORT JOURNAL</button>
+      <button id="resetBook">RESET BOOK $1000</button>
+      <button id="closeDisk">CLOSE</button>
+    </div>
+  </div>
+</div>
+<div class="modal" id="tixModal">
+  <div class="card">
+    <h2>NEW TICKET</h2>
+    <div class="row"><span>Market</span>
+      <select id="tMkt"><option>BTC</option><option>ETH</option><option>SOL</option><option>DOGE</option></select>
+    </div>
+    <div class="row"><span>Side</span>
+      <select id="tSide"><option>buy</option><option>sell</option></select>
+    </div>
+    <div class="row"><span>Risk $</span><input id="tRisk" type="number" step="0.01" /></div>
+    <div class="row"><span></span><div>
+      <button class="go" id="openTix">OPEN FOR RISK</button>
+      <button id="closeTix">CLOSE</button>
+    </div></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+</body>
+</html>

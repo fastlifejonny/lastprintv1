@@ -1,0 +1,257 @@
+# grok-agents
+
+**A desk of research agents for crypto markets. It does not trade.**
+
+It places no orders. It signs nothing. It holds no private key, no seed phrase,
+and no exchange credential with trading scope — read-only keys only. It produces
+no buy or sell call and no position size. What comes out is a threaded, sourced,
+scored research report that a human reads before deciding anything. That
+boundary is the product, not a limitation.
+
+**Why it is built that way, in one calculation.** The measured graduation rate on
+pump.fun is 0.63% (Marino et al., 2026, n=655,770). Run a verifier at TPR 0.90 /
+FPR 0.05 over 1,000 candidates and the confirmed set looks like this:
+
+```
+$ desk eval --base-rate 0.0063 --tpr 0.9 --fpr 0.05
+
+universe            1000 candidates at a 0.63% base rate
+verifier            TPR 0.90 / FPR 0.05
+real in the window  6.3
+confirmed set       55.4  (5.7 real, 49.7 false)
+precision           10.2%   lift over base rate: 16.3x
+missed              0.6 real leads
+
+to reach 50% precision you need a base rate of 5.26% -- 8.4x this universe.
+Narrowing the universe beats tuning the filter.
+
+3 confirmers at rho 0.85 are worth 1.11 independent votes.
+round trip at 1.0% fee + 3.0% slippage costs 7.69%, so price must move 8.33% to break even.
+proving a 55% hit rate against 50% would take 776 observations.
+```
+
+Nine of every ten confirmations are false, and no amount of agent orchestration
+moves that: the number is set by the base rate, not by the filter. Adding
+confirmers does not rescue it either — three agents reading the same feeds at
+rho 0.85 are worth about one independent vote. And any edge that survives all of
+that still has to clear an 8.33% round trip before it is worth anything.
+
+So there is nothing here to automate into an execution path. The desk exists to
+make research **cheap and auditable**, and to hand a human a document. If you
+came here from a "sniper bot" search, this is a different thing, on purpose.
+
+Every number above is reproducible: `desk eval`, and the tests in
+`tests/test_eval.py` pin each one.
+
+---
+
+## Quick start
+
+```bash
+python -m venv .venv && source .venv/bin/activate
+pip install -e ".[dev]"
+
+desk scan --limit 50        # run a discovery cycle against the bundled fixtures
+desk funnel --days 7        # read the funnel before reading anything else
+desk report --lead 001      # the human brief for one lead
+desk eval                   # the base-rate arithmetic above
+desk backtest --split held-out
+```
+
+`sources/chain.py` and `sources/market.py` ship as documented stubs backed by
+fixtures, so the desk runs with no network and no keys. Point them at your own
+read-only endpoints; the field names the roles expect are listed in each module.
+
+## What a cycle looks like
+
+```
+$ desk scan --limit 50
+scanned      7
+cleared      3   clear_rate    0.429
+confirmed    1   confirm_rate  0.333
+reported     1
+top reject reasons
+     1  social:author_count_low
+     1  flow:top10_concentration
+     1  mint_authority_active
+     1  lp_unlocked
+     1  creator_share_high
+```
+
+Read this before reading any brief. 300 scans producing 2 clears means the scout
+is shovelling noise. 40 clears producing 1 confirm means the scout and the
+confirmers disagree about what a good setup is. The reject reasons say which.
+
+## The desk
+
+```
+scout  ->  auditor  ->  (flow, social)  ->  reporter
+```
+
+| role | owns | stops at |
+|---|---|---|
+| `scout` | discovery, wide recall | emits leads; never clears or ranks them |
+| `auditor` | structural on-chain clearance | CLEAR never means "good"; a REJECT is terminal |
+| `flow` | holder and wallet distribution | confirms distribution, never forecasts |
+| `social` | attention: authors, velocity, bot ratio | attention is not value |
+| `reporter` | the human brief | adds no fact that is not in the thread; never recommends |
+
+Roles never call each other. They emit messages; `pipeline.py` routes them in
+that order and a stage cannot be skipped. Every role declares a `boundary` and
+the class refuses to exist without one.
+
+## Teams: four desks that do not talk to each other
+
+One desk gives you one opinion. Twenty agents split into four **independent
+teams** give you four — and, more usefully, a measurement of how much those four
+opinions were ever worth.
+
+```bash
+desk teams  --agents 20 --teams 4     # who sits where, and what each desk believes
+desk league --agents 20 --teams 4     # run them all over one labelled universe, then score
+desk scoreboard --days 7              # the same read on a live ledger, where nobody knows the answers
+```
+
+Each team is a complete desk with its own scout, auditor, confirmers and
+reporter, its own thesis about what a good lead looks like, its own lead-id
+namespace (`A-001`, `B-001`, …) and its own slice of the ledger. They run
+concurrently and **in isolation**: no shared blackboard, no cross-team voting, no
+"team B already rejected this". `assert_team_isolated` runs after every league
+and fails loudly if a team was handed anyone else's message, because four teams
+sharing state are one team with extra latency and their agreement would mean
+nothing.
+
+Spare seats become extra confirmers — `--agents 28 --teams 4` gives every desk
+two flow and two social analysts, at slightly different thresholds, which is the
+cheapest way to watch within-team correlation appear.
+
+```
+$ desk league --agents 20 --teams 4 --universe 1200 --base-rate 0.0063
+
+universe   1200 candidates at a 0.63% base rate, seed 17
+planted    5 genuinely good tokens
+
+   team                 agents   scan  clear  conf  TP   prec  recall  uniq  msg/conf
+--------------------------------------------------------------------------------------------
+ 1 D attention-first         5     68     16     6   1 16.7%  20.0%     0      28.5
+ 2 C flow-first              5    224     56    18   1  5.6%  20.0%     0      30.0
+ 3 A wide-net                5    587    137   102   5  4.9% 100.0%    78      14.9
+ 4 B gatekeeper              5     65     26     8   0  0.0%   0.0%     0      22.4
+
+how independent were they
+  measured agreement rho 0.52 -> 4 teams are worth 1.57 independent desks
+
+ranking
+  no significant separation between D and C (p=1.000); the ranking is provisional
+  proving that gap would take about 88 confirmed leads per team
+```
+
+Read that scoreboard carefully, because it is the whole argument in one table.
+The "winner" confirmed six leads and got one right. Team A found **every** good
+token in the universe and still ran at 4.9% precision. Twenty agents in four
+teams were worth **1.57 independent desks**. And the ranking refuses to crown
+anyone, because at this base rate you would need ~88 confirmed leads per team
+before the gap between first and second means anything.
+
+Try `--base-rate 0.05` and the whole board lifts to 20–37% precision without a
+single line of agent code changing. That is `required_base_rate` again: **the
+universe you choose dominates the desk you build.**
+
+### What the league scores, and what it never will
+
+Teams compete on **research quality**: precision and recall against a labelled
+universe, how much of what they found nobody else found, and what each
+confirmation cost in messages. There is no P&L column, no returns, no simulated
+fills — `tests/test_league.py` fails the build if a scoreboard column ever looks
+like one. A tournament ranked on money would need a way to make money, and this
+repo does not have one on purpose.
+
+The labelled universe lives in `sources/synthetic.py`, and it is built to be
+unwinnable in the interesting way: a fraction of the bad tokens are **impostors**
+that read clean on every field a desk can see. That fraction, not the filter, is
+what caps precision — which is exactly the claim in the article, made runnable.
+
+## Two checks that are not optional
+
+**The address.** Every message in a thread repeats the contract address, and it
+is compared by machine before any brief is emitted. A one-character difference is
+the most expensive failure in this stack, and eyes skip over it:
+
+```
+address drift in lead 047 at stage social:
+  thread:  So11111111111111111111111111111111111111112
+  message: So111111111111111111111111111111111111111l2
+  (first difference at index 41)
+```
+
+**The stages.** A brief cannot be assembled from an incomplete thread, and a lead
+the auditor rejected never reaches a confirmer.
+
+## Layout
+
+```
+src/grok_agents/
+  models.py      pydantic schemas: Lead, Message, Clearance, Confirmation, Brief
+  thread.py      the message ledger and the address consistency check
+  funnel.py      route + counters: scanned -> cleared -> confirmed -> reported
+  pipeline.py    the router: roles emit, this decides what runs next
+  teams.py       rosters, per-team namespaces, isolation checks
+  league.py      run teams concurrently, score them, refuse to crown on noise
+  store.py       sqlite via stdlib sqlite3, no ORM, one team column
+  log.py         one JSON line per message, keyed by lead_id
+  roles/         scout, auditor, flow, social, reporter
+  sources/       read-only GET, cached and rate limited; no write path exists
+                 synthetic.py: a labelled universe with planted ground truth
+  eval/          precision, correlation, cost, power, tournament, backtest
+  cli.py         desk scan | report | funnel | eval | backtest
+                      | teams | league | scoreboard
+```
+
+## Evaluation
+
+`eval/` is deliberately unflattering:
+
+- `precision.py` — what a filter actually yields at a given base rate, and the
+  inverse: `required_base_rate` shows that narrowing the universe beats tuning
+  the filter.
+- `correlation.py` — `N_eff = N / (1 + (N-1)ρ)`. Confirmers reading the same
+  input correlate; count votes, not agents.
+- `cost.py` — the round trip is paid twice, on certainty, before any edge is paid
+  at all.
+- `power.py` — a 55% hit rate against a 50% break-even takes 776 observations to
+  demonstrate. Until then a good month and a lucky month look identical.
+- `tournament.py` — did team A actually beat team B, or get lucky? A permutation
+  test on two precisions, the measured agreement between desks, and how many more
+  confirmations a ranking would need to be believable.
+- `backtest.py` — confirmed set vs random entry, after fees, on a held-out split,
+  by permutation test. **"No significant difference" is the expected result**, and
+  the code is written to be able to say it.
+
+## Testing
+
+```bash
+pytest -q
+ruff check .
+```
+
+Every role has a test with a synthetic lead that must be REJECTED — a live mint
+authority, an unlocked LP, a bundled holder table, a botnet. `tests/test_boundary.py`
+fails the build if a dependency that can sign a transaction, or a code path that
+touches a key, ever appears in `src/`. `tests/test_league.py` fails it if a
+scoreboard grows a P&L column, and asserts that no team ever read another team's
+ledger.
+
+## Contributing
+
+Read [CONTRIBUTING.md](CONTRIBUTING.md) first. Short version: pull requests that
+add order execution, transaction signing, or private key handling are closed
+without discussion. See [CLAUDE.md](CLAUDE.md) for the full constraint.
+
+## Article
+
+Companion repo to *An Agent Trading Desk: What This Architecture Actually Does,
+and What It Mathematically Cannot*.
+
+## License
+
+MIT. See [LICENSE](LICENSE).

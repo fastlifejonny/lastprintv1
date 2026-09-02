@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GROKSTREET</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=Press+Start+2P&display=swap" rel="stylesheet" />
+  <style>
+    :root { --amber:#e8b86d; --green:#3dff8a; --red:#ff5b6e; --ink:#07070a; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; background: var(--ink); color: #f3e6d4; font-family: "IBM Plex Mono", monospace; overflow: hidden; }
+    .app { display: grid; grid-template-rows: 42px 1fr 122px; height: 100%; }
+    header { display: flex; align-items: center; gap: 10px; background: #0a0a0e; border-bottom: 1px solid #2c241c; padding: 0 10px; font-size: 11px; }
+    .brand { font-family: "Press Start 2P", monospace; font-size: 8px; color: var(--amber); }
+    .live { color: var(--green); display: flex; gap: 6px; align-items: center; }
+    .live i { width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 8px var(--green); animation: blink 1.4s infinite; }
+    @keyframes blink { 50% { opacity: .35; } }
+    .tickers { display: flex; gap: 12px; flex: 1; overflow: hidden; }
+    .tk b { color: #fff; } .up { color: var(--green); } .dn { color: var(--red); }
+    .hdr-right { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+    button, select, input {
+      background: #1a120e; color: #e8d4bc; border: 1px solid #4a3224;
+      font-family: inherit; font-size: 10px; padding: 4px 8px;
+    }
+    button { cursor: pointer; }
+    button.on, .views button.on, .floors button.on { color: var(--amber); border-color: var(--amber); background: #3a2418; }
+    .go { border-color: var(--green); color: var(--green); }
+    .go:disabled { opacity: .35; cursor: not-allowed; }
+    .stage { display: grid; grid-template-columns: 1fr 320px; min-height: 0; }
+    .office-wrap { position: relative; overflow: hidden; background: #0b1018; }
+    .sky { position: absolute; inset: 0 0 auto 0; height: 92px;
+      background: linear-gradient(#070b14, #101826 70%, #1a140e);
+      border-bottom: 2px solid #c9a24a33; }
+    .moon { display:none; }
+    .big-board { position:absolute; left:8%; right:8%; top:8px; height:72px; background:#06140c; border:3px solid #1a2a18;
+      box-shadow: inset 0 0 20px #0f3, 0 0 18px #0a2; overflow:hidden; z-index:2; }
+    .big-board b { display:block; font-family:"Press Start 2P",monospace; font-size:7px; color:#8f8; letter-spacing:.2em; padding:4px 8px; }
+    .big-board .rows { display:grid; grid-template-columns:repeat(4,1fr); gap:2px; padding:0 6px; font-size:10px; color:#9f9; }
+    .tape { position:absolute; left:0; right:0; top:84px; height:16px; background:#0a0a0c; color:var(--amber); font-size:10px;
+      overflow:hidden; white-space:nowrap; z-index:3; border-top:1px solid #3a2; border-bottom:1px solid #3a2; }
+    .tape span { display:inline-block; padding-left:100%; animation:ticker 22s linear infinite; }
+    @keyframes ticker { to { transform: translateX(-100%); } }
+    .window-bar { position: absolute; top: 100px; left: 0; right: 0; height: 6px; background: #1a140c; }
+    .col { position:absolute; top:106px; width:18px; bottom:8px; background:linear-gradient(#cfc3a4,#8a7a55); box-shadow:4px 0 0 #3a3020; z-index:1; }
+    .col.l { left:10px; } .col.r { right:10px; }
+    .app.farm .big-board, .app.farm .tape, .app.farm .col { display:none; }
+    .room {
+      position: absolute; inset: 106px 8px 8px 8px;
+      background:
+        linear-gradient(180deg, rgba(255,200,120,.07), transparent 28%),
+        repeating-linear-gradient(90deg, #8a542e 0 22px, #6a3c20 22px 24px, #93582f 24px 46px, #5c341c 46px 48px);
+      border: 6px solid #1a0c08;
+      box-shadow: inset 0 0 80px #0008;
+      image-rendering: pixelated;
+    }
+    .room::before {
+      content:""; position:absolute; inset:0; pointer-events:none;
+      background: repeating-linear-gradient(transparent 0 3px, rgba(0,0,0,.08) 3px 4px);
+      z-index: 7;
+    }
+    .app.farm .sky, .app.farm .window-bar { display: none; }
+    .app.farm .room {
+      inset: 8px; border-color: #2a4a1c;
+      background: repeating-linear-gradient(#4f8a3a 0 14px, #5a9844 14px 16px);
+    }
+    .rug { position: absolute; left: 36%; top: 28%; width: 28%; height: 34%; background:
+      repeating-linear-gradient(90deg, #8b2c24 0 10px, #6e201a 10px 12px);
+      box-shadow: inset 0 0 0 6px #4a1410, 8px 10px 0 #2a100c; }
+    .table { position: absolute; left: 40%; top: 33%; width: 20%; height: 22%; background: #6a3a1c;
+      box-shadow: 8px 10px 0 #2a140a, inset 0 2px 0 #c48a4a; border: 2px solid #3a1c0c; }
+    .desk { position: absolute; width: 124px; height: 62px; background: linear-gradient(#5a341c, #3a2010);
+      box-shadow: 6px 8px 0 #1a0c06, inset 0 2px 0 #c09050; border: 2px solid #2a140a; }
+    .desk .screen { position: absolute; top: -22px; left: 14px; width: 44px; height: 28px; border: 4px solid #140c08; background: #061018; }
+    .desk.on .screen { background: linear-gradient(#163,#0b3 40%, #1ee08a); box-shadow: 0 0 16px #2f8, inset 0 0 8px #6f8; animation: crt 1.6s infinite; }
+    @keyframes crt { 50% { filter: brightness(1.25); } }
+    .label { position: absolute; bottom: -22px; left: 0; width: 100%; text-align: center; font-size: 9px; color: #f0d2a8; text-transform: uppercase; }
+    .hut { display: none; position: absolute; width: 128px; height: 80px; background: linear-gradient(#7a4426,#4a2814); box-shadow: 7px 9px 0 #1a0e08, inset 0 3px 0 #c09058; border: 2px solid #2a140a; }
+    .app.farm .hut { display: block; }
+    .app.farm .desk, .app.farm .rug, .app.farm .table { display: none; }
+    .hut .roof { position: absolute; top: -20px; left: -8px; right: -8px; height: 26px; background: #3a6; clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+    .hut.purple .roof { background: #5a3a8a; } .hut.red .roof { background: #8a3030; } .hut.blue .roof { background: #2a5a8a; }
+    .hut .tag { position: absolute; top: 10px; width: 100%; text-align: center; font-size: 9px; color: #fff; }
+    .fountain { display: none; position: absolute; left: 48%; top: 46%; width: 28px; height: 28px; border-radius: 50%; background: #3af; box-shadow: 0 0 14px #3af; }
+    .app.farm .fountain { display: block; }
+    .floors { position: absolute; top: 8px; right: 8px; display: flex; gap: 5px; z-index: 9; }
+    .cash { position: absolute; left: 50%; top: 62%; transform: translateX(-50%); background: #111; border: 1px solid #3a2; color: var(--green); font-size: 11px; padding: 3px 8px; z-index: 6; }
+    .hint { position: absolute; left: 10px; bottom: 10px; z-index: 9; font-size: 10px; color: #c9b8a0; background: rgba(0,0,0,.5); padding: 4px 8px; max-width: 72%; }
+    .agent { position: absolute; width: 28px; height: 44px; z-index: 5; image-rendering: pixelated; filter: drop-shadow(3px 4px 0 #0006); }
+    .agent .spr { width: 22px; height: 40px; margin: 0 auto; position: relative; }
+    .agent .spr i { position: absolute; display: block; image-rendering: pixelated; }
+    .agent .hair { top: 0; left: 4px; width: 14px; height: 6px; box-shadow: 2px 1px 0 #0004; }
+    .agent .face { top: 5px; left: 5px; width: 12px; height: 9px; background: #f3c7a0; box-shadow: inset -2px -2px 0 #d49a70; }
+    .agent .eye { top: 8px; width: 3px; height: 3px; background: #1a1008; }
+    .agent .eye.l { left: 7px; } .agent .eye.r { left: 13px; }
+    .agent .torso { top: 14px; left: 3px; width: 16px; height: 13px; box-shadow: inset 0 2px 0 #fff3; }
+    .agent .visor { top: 16px; left: 6px; width: 10px; height: 4px; background: #b8fff0; box-shadow: 0 0 6px #8ff; }
+    .agent .arm { top: 16px; width: 4px; height: 8px; background: #f3c7a0; }
+    .agent .arm.l { left: 0; } .agent .arm.r { right: 0; left: auto; }
+    .agent .leg { top: 27px; width: 5px; height: 11px; background: #16161e; animation: walk .28s infinite alternate; }
+    .agent .leg.l { left: 5px; } .agent .leg.r { left: 12px; animation-delay: -.14s; }
+    .agent.sit .leg { animation: none; height: 5px; top: 30px; }
+    .agent.sit .arm { transform: rotate(-20deg); }
+    @keyframes walk { to { transform: translateY(-3px); } }
+    .bubble { position: absolute; transform: translate(-40%, -130%); background: #07140e; color: var(--green); font-size: 10px; padding: 3px 6px; border: 1px solid #2e6; white-space: nowrap; z-index: 8; box-shadow: 2px 3px 0 #0008; }
+    .bubble.bad { color: var(--red); border-color: #a33; background:#18080a; }
+    aside { background: #09090d; border-left: 1px solid #2a231c; display: grid; grid-template-rows: auto auto auto 1fr; min-height: 0; }
+    aside section { padding: 8px 10px; border-bottom: 1px solid #221c16; }
+    h3 { font-size: 10px; color: #8a7a68; letter-spacing: .1em; margin-bottom: 6px; }
+    .seat { display: flex; gap: 6px; align-items: center; font-size: 10px; padding: 1px 0; }
+    .dot { width: 7px; height: 7px; border-radius: 50%; }
+    .seat span { margin-left: auto; color: #6a5a4a; }
+    .seat.busy span { color: var(--green); }
+    .ticket, .pos { font-size: 10px; background: #121018; border: 1px solid #3a2a1c; padding: 6px; margin-bottom: 5px; }
+    .feed { overflow: auto; min-height: 0; border: 0; }
+    .log { font-size: 10px; line-height: 1.4; color: #b9aa96; margin-bottom: 5px; }
+    .log .who { color: var(--amber); }
+    footer { background: #08080c; border-top: 1px solid #2a231c; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; padding: 8px; }
+    .chart-box { background: #0c0c10; border: 1px solid #221c16; position: relative; }
+    .chart-box label { position: absolute; top: 3px; left: 6px; font-size: 10px; color: #8a7a68; }
+    .chart-box canvas { width: 100%; height: 100%; display: block; }
+    .toast { position: fixed; top: 50px; left: 50%; transform: translateX(-50%); background: #111; border: 2px solid var(--amber); color: var(--amber); font-family: "Press Start 2P", monospace; font-size: 9px; padding: 10px 14px; z-index: 30; opacity: 0; pointer-events: none; transition: .2s; }
+    .toast.show { opacity: 1; }
+    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.65); z-index: 40; align-items: center; justify-content: center; }
+    .modal.on { display: flex; }
+    .card { width: min(560px, 92vw); background: #121018; border: 1px solid #4a3224; padding: 16px; max-height: 80vh; overflow: auto; }
+    .card h2 { font-size: 12px; color: var(--amber); margin-bottom: 10px; }
+    .row { display: grid; grid-template-columns: 140px 1fr; gap: 8px; align-items: center; margin-bottom: 8px; font-size: 11px; }
+    .warn { color: var(--red); font-size: 10px; margin: 8px 0; }
+    pre { font-size: 10px; background: #0a0a0e; padding: 8px; overflow: auto; max-height: 180px; }
+  </style>
+</head>
+<body>
+<div class="app" id="app">
+  <header>
+    <div class="brand">GROKSTREET</div>
+    <div class="live"><i></i><span id="modeTag">PAPER</span></div>
+    <div class="views">
+      <button class="on" data-view="office">OFFICE</button>
+      <button data-view="farm">FARM</button>
+      <button data-view="alpha">ALPHA</button>
+      <button data-view="night">NIGHT</button>
+    </div>
+    <div class="tickers" id="tickers"></div>
+    <div class="hdr-right">
+      <div>REFUSED <b id="refused">0</b></div>
+      <div>BOUGHT <b id="bought">0</b></div>
+      <div>CASH <b id="cashH">$50.00</b></div>
+      <div>EQ <b id="eq">$50.00</b></div>
+      <div>P&L <b id="pnl">+$0.00</b></div>
+      <button id="ticketBtn">TICKET</button>
+      <button class="go" id="approveBtn" disabled>APPROVE</button>
+      <button id="diskBtn">DISK</button>
+      <button id="setBtn">KEYS</button>
+      <div id="clock"></div>
+    </div>
+  </header>
+  <div class="stage">
+    <div class="office-wrap">
+      <div class="sky">
+        <div class="moon"></div>
+        <div class="big-board"><b>GROKSTREET · NYSE PIT · PAPER</b><div class="rows" id="boardRows"></div></div>
+      </div>
+      <div class="tape"><span id="tapeScroll">GROKSTREET PAPER DESK — LIVE SEND OFF — WATCH ADDRESS ONLY — </span></div>
+      <div class="window-bar"></div>
+      <div class="col l"></div><div class="col r"></div>
+      <div class="room" id="room">
+        <div class="floors" id="floorBtns">
+          <button class="on" data-floor="CRYPTO">CRYPTO</button>
+          <button data-floor="MEME">MEME</button>
+          <button data-floor="INDEX">INDEX</button>
+        </div>
+        <div class="rug"></div><div class="table"></div><div class="fountain"></div>
+        <div class="cash" id="cash">VAULT $50.00</div>
+        <div class="hint" id="hint">Paper broker on. Live send is off. Trade-only keys only.</div>
+        <div class="hint" id="feedsBar" style="left:auto;right:10px;max-width:40%">FEEDS …</div>
+      </div>
+    </div>
+    <aside>
+      <section><h3>AGENTS</h3><div id="roster"></div></section>
+      <section><h3>TICKET</h3><div id="pipe"></div></section>
+      <section><h3>POSITIONS</h3><div id="pos"></div></section>
+      <section><h3>DESK CHAT</h3><div id="chat" class="feed" style="max-height:120px;overflow:auto"></div></section>
+      <section><h3>LEARN</h3><div id="learnBox" style="font-size:10px;padding:6px"></div></section>
+      <section class="feed"><h3>JOURNAL</h3><div id="feed"></div></section>
+    </aside>
+  </div>
+  <footer>
+    <div class="chart-box"><label id="c1l">BTC</label><canvas id="c1"></canvas></div>
+    <div class="chart-box"><label id="c2l">ETH</label><canvas id="c2"></canvas></div>
+    <div class="chart-box"><label id="c3l">SOL</label><canvas id="c3"></canvas></div>
+  </footer>
+</div>
+<div class="modal" id="setModal">
+  <div class="card">
+    <h2>TRADE-ONLY KEYS · LIVE SEND OFF</h2>
+    <p class="warn">This file will not sign mainnet orders. If withdraw is enabled on the key, do not paste it.</p>
+    <div class="row"><span>Venue</span>
+      <select id="venue"><option value="paper">GROKSTREET paper</option><option value="hl-test">Hyperliquid testnet (tape only)</option><option value="binance-test">Binance testnet (tape only)</option></select>
+    </div>
+    <div class="row"><span>Start cash</span><input id="startCash" type="number" value="50" /></div>
+    <div class="row"><span>Risk / ticket %</span><input id="riskPct" type="number" value="0.5" step="0.1" /></div>
+    <div class="row"><span>Taker fee bps</span><input id="feeBps" type="number" value="4" /></div>
+    <div class="row"><span>Slippage bps</span><input id="slipBps" type="number" value="5" /></div>
+    <div class="row"><span>Watch address</span><input id="watchAddr" placeholder="public Solana only — never a private key" autocomplete="off" /></div>
+    <div class="row"><span>API key</span><input id="apiKey" placeholder="leave empty — not a wallet" autocomplete="off" /></div>
+    <div class="row"><span>Can withdraw?</span>
+      <select id="canWd"><option value="no">NO — required</option><option value="yes">yes (rejected)</option></select>
+    </div>
+    <div class="row"><span></span><div>
+      <button class="go" id="saveKeys">SAVE TO DISK</button>
+      <button id="closeSet">CLOSE</button>
+    </div></div>
+  </div>
+</div>
+<div class="modal" id="diskModal">
+  <div class="card">
+    <h2>SHARED COMPUTER DISK</h2>
+    <p style="font-size:11px;margin-bottom:8px">Local twin of the Grok Bot shared disk. Same filenames the Bots should read and write.</p>
+    <pre id="diskPre"></pre>
+    <div style="margin-top:8px">
+      <button class="go" id="exportJ">EXPORT JOURNAL</button>
+      <button id="resetBook">RESET BOOK $50</button>
+      <button id="closeDisk">CLOSE</button>
+    </div>
+  </div>
+</div>
+<div class="modal" id="tixModal">
+  <div class="card">
+    <h2>NEW TICKET</h2>
+    <div class="row"><span>Market</span>
+      <select id="tMkt"><option>BTC</option><option>ETH</option><option>SOL</option><option>DOGE</option></select>
+    </div>
+    <div class="row"><span>Side</span>
+      <select id="tSide"><option>buy</option><option>sell</option></select>
+    </div>
+    <div class="row"><span>Risk $</span><input id="tRisk" type="number" step="0.01" /></div>
+    <div class="row"><span></span><div>
+      <button class="go" id="openTix">OPEN FOR RISK</button>
+      <button id="closeTix">CLOSE</button>
+    </div></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const FLOOR_AGENTS = [
+  {id:"CHIEF",color:"#d4af37",hair:"#1a120c",body:"#2a2a32",role:"routes"},
+  {id:"TAPE",color:"#3dff8a",hair:"#2a2010",body:"#1c3a28",role:"prints"},
+  {id:"VERIFY",color:"#6ad",hair:"#111",body:"#1a2838",role:"kills lies"},
+  {id:"QUANT",color:"#c8f",hair:"#2a1020",body:"#321848",role:"models"},
+  {id:"MACRO",color:"#f6c26b",hair:"#3a2010",body:"#3a2a10",role:"session"},
+  {id:"RISK",color:"#ff5b6e",hair:"#1a0808",body:"#3a1518",role:"veto"},
+  {id:"FLOW",color:"#5ee",hair:"#082028",body:"#103038",role:"sweeps"},
+  {id:"ARCHIVE",color:"#bbb",hair:"#333",body:"#2a2a2a",role:"journal"}
+];
+const ALPHA_AGENTS = [
+  {id:"HEAD",color:"#d4af37",hair:"#1a120c",body:"#2a2a32",role:"never trades"},
+  {id:"SEARCH",color:"#3dff8a",hair:"#1a3010",body:"#1c3a28",role:"sources"},
+  {id:"RISK",color:"#ff5b6e",hair:"#1a0808",body:"#3a1518",role:"CLEAR/KILL"},
+  {id:"SNIPER",color:"#f93",hair:"#201000",body:"#3a2008",role:"one send"},
+  {id:"WHALE",color:"#6ad",hair:"#111",body:"#1a2838",role:"wallets"},
+  {id:"RUG",color:"#f66",hair:"#200",body:"#301010",role:"LP watch"},
+  {id:"EXIT",color:"#ee8",hair:"#222200",body:"#333010",role:"flatten"},
+  {id:"SHILL",color:"#c8f",hair:"#201030",body:"#281838",role:"noise"}
+];
+const NIGHT_AGENTS = [
+  {id:"MONITOR",color:"#6df",hair:"#123",body:"#1a3a48",role:"stream kill"},
+  {id:"AUDITOR",color:"#f84",hair:"#310",body:"#3a2010",role:"same funder"},
+  {id:"NARRATIVE",color:"#fd6",hair:"#330",body:"#3a3010",role:"spread score"},
+  {id:"TIMING",color:"#c8f",hair:"#201030",body:"#281838",role:"session veto"},
+  {id:"CHECKER",color:"#f66",hair:"#200",body:"#301018",role:"last no"}
+];
+const NIGHT_SEATS = [
+  {who:"MONITOR",x:8,y:20},{who:"AUDITOR",x:26,y:20},{who:"NARRATIVE",x:8,y:50},
+  {who:"TIMING",x:26,y:50},{who:"CHECKER",x:48,y:34}
+];
+const KILL_REASONS = [
+  "no metadata / no pulse",
+  "one funder behind first buyers",
+  "mint authority still live",
+  "freeze never revoked",
+  "deployer rugged before under another name",
+  "chatter is same-day accounts",
+  "curve stalled, nobody real buying",
+  "four said yes — checker still no"
+];
+const FARM_AGENTS = [
+  {id:"RESEARCH",color:"#b8f",hair:"#211",body:"#534",role:"research"},
+  {id:"BUILD",color:"#6af",hair:"#123",body:"#246",role:"build"},
+  {id:"TOOLS",color:"#f84",hair:"#310",body:"#421",role:"tools"},
+  {id:"INBOX",color:"#fd6",hair:"#330",body:"#432",role:"inbox"},
+  {id:"TEST",color:"#6df",hair:"#123",body:"#145",role:"test"},
+  {id:"CHECK",color:"#6f8",hair:"#131",body:"#142",role:"verify"},
+  {id:"DELIVER",color:"#f66",hair:"#300",body:"#412",role:"deliver"}
+];
+const DESKS = {
+  CRYPTO:[{x:8,y:20,who:"TAPE"},{x:8,y:50,who:"FLOW"},{x:26,y:20,who:"CHIEF"},{x:26,y:50,who:"VERIFY"}],
+  MEME:[{x:8,y:20,who:"TAPE"},{x:8,y:50,who:"FLOW"},{x:26,y:20,who:"RISK"},{x:26,y:50,who:"ARCHIVE"}],
+  INDEX:[{x:8,y:20,who:"QUANT"},{x:8,y:50,who:"MACRO"},{x:26,y:20,who:"VERIFY"},{x:26,y:50,who:"ARCHIVE"}]
+};
+const ALPHA_SEATS = [
+  {who:"SEARCH",x:8,y:16},{who:"WHALE",x:8,y:46},{who:"SHILL",x:26,y:16},{who:"RISK",x:26,y:46},
+  {who:"SNIPER",x:62,y:16},{who:"RUG",x:62,y:46},{who:"EXIT",x:78,y:16},{who:"HEAD",x:44,y:32}
+];
+const HUTS = [
+  {id:"RESEARCH",x:16,y:10,cls:"purple"},{id:"BUILD",x:44,y:8,cls:""},{id:"TOOLS",x:70,y:10,cls:"red"},
+  {id:"INBOX",x:12,y:40,cls:""},{id:"CHECK",x:72,y:40,cls:""},
+  {id:"TEST",x:16,y:66,cls:"blue"},{id:"DELIVER",x:68,y:66,cls:"red"}
+];
+const MARKETS = { CRYPTO:["BTC","ETH","SOL"], MEME:["DOGE","SOL","BTC"], INDEX:["TSLA","NVDA","SPX"], ALPHA:["SOL"] };
+const SEED = {BTC:111000,ETH:4280,SOL:248,DOGE:0.22,TSLA:248,NVDA:180,SPX:6400};
+const feeds = { hl:"…", bn:"…", yh:"…", pf:"…", dx:"…" };
+const book = {
+  cash: 50, start: 50, positions: [], journal: [], feesPaid: 0, tickets: 0, refused: 0, bought: 0,
+  cfg: { venue:"paper", riskPct:0.5, feeBps:4, slipBps:5, apiKey:"", watchAddr:"", canWithdraw:false, liveSend:false }
+};
+const state = { view:"office", floor:"CRYPTO", prices:{}, series:{}, agents:{}, ticket:null, seq:1, funding:{}, oi:{}, coins:[], boosts:{} };
+const brain = JSON.parse(localStorage.getItem("gs-brain")||"null") || {
+  seen:0, veto:0, clear:0, fills:0, win:0, lose:0,
+  reasons:{}, weights:{ metadata:1, pulse:1, boost:1, social:1, cap:1 },
+  chat:[]
+};
+function saveBrain(){ localStorage.setItem("gs-brain", JSON.stringify(brain)); }
+function talk(who, text){
+  brain.chat.unshift({t:Date.now(), who, text});
+  if(brain.chat.length>80) brain.chat.pop();
+  const box=document.getElementById("chat");
+  if(box){
+    const row=document.createElement("div");
+    row.className="log";
+    row.innerHTML=`<span class="who">${who}</span> ${text}`;
+    box.prepend(row);
+  }
+  saveBrain();
+}
+function bumpReason(r){
+  const key=(r||"other").slice(0,40);
+  brain.reasons[key]=(brain.reasons[key]||0)+1;
+}
+function renderLearn(){
+  const el=document.getElementById("learnBox"); if(!el) return;
+  const top=Object.entries(brain.reasons).sort((a,b)=>b[1]-a[1]).slice(0,4)
+    .map(([k,v])=>k+" ×"+v).join("<br>") || "no vetoes yet";
+  const wr = brain.fills ? ((brain.win/brain.fills)*100).toFixed(0) : "—";
+  el.innerHTML = `seen ${brain.seen} · veto ${brain.veto} · clear ${brain.clear}<br>paper fills ${brain.fills} · win ${brain.win} lose ${brain.lose} · ${wr}%<br>${top}`;
+}
+function lastTalk(who){
+  return (brain.chat.find(c=>c.who===who)||{}).text || "";
+}
+try {
+  const saved = JSON.parse(localStorage.getItem("gs-book")||"null");
+  if (saved && typeof saved.cash==="number") {
+    Object.assign(book, saved, {cfg: Object.assign(book.cfg, saved.cfg||{})});
+    if (saved.seq) state.seq = saved.seq;
+  }
+} catch(_){}
+const room = document.getElementById("room");
+const appEl = document.getElementById("app");
+function persist(){ localStorage.setItem("gs-book", JSON.stringify({cash:book.cash,start:book.start,positions:book.positions,journal:book.journal,feesPaid:book.feesPaid,tickets:book.tickets,refused:book.refused,bought:book.bought,cfg:book.cfg,seq:state.seq})); }
+function rosterList(){ return state.view==="farm"?FARM_AGENTS: state.view==="alpha"?ALPHA_AGENTS: state.view==="night"?NIGHT_AGENTS: FLOOR_AGENTS; }
+function mid(sym){ return state.prices[sym] || SEED[sym] || 0; }
+function pumpTag(c){ if(!c) return ""; return (c.symbol||c.name||"UNK").replace(/[^A-Za-z0-9]/g,"").slice(0,10).toUpperCase() || "UNK"; }
+function pumpMark(c){
+  if(!c) return 0;
+  const usd=+(c.usd_market_cap||c.market_cap_usd||0);
+  if(usd>0) return usd;
+  const sol=+(c.market_cap||0); const solPx=state.prices.SOL||SEED.SOL||200;
+  return sol>0 ? sol*solPx : 0;
+}
+function pumpPacket(c){
+  const tag=pumpTag(c);
+  const gh = [c.website,c.twitter,c.telegram].filter(Boolean).find(u=>/github\.com/i.test(u||"")) || "";
+  const socials=[c.twitter,c.website,c.telegram].filter(Boolean);
+  return {
+    tag, mint:c.mint, name:c.name, mc:pumpMark(c),
+    ageMin: c.created_timestamp ? Math.max(0,(Date.now()-c.created_timestamp)/60000) : null,
+    socials, github:gh, replies:c.reply_count||0, complete:!!c.complete
+  };
+}
+function equity(){ let m=0; book.positions.forEach(p=>m+=p.qty*mid(p.sym)); return book.cash+m; }
+function toast(m){ const t=document.getElementById("toast"); t.textContent=m; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),2200); }
+function log(who,text,kind=""){
+  const row=document.createElement("div"); row.className="log";
+  row.innerHTML=`<span class="who">${who}</span> <span class="${kind==="ok"?"up":kind==="no"?"dn":""}">${text}</span>`;
+  document.getElementById("feed").prepend(row);
+  book.journal.unshift({t:new Date().toISOString(),who,text,kind,eq:equity()});
+  if(book.journal.length>400) book.journal.pop(); persist();
+}
+function pop(id,text,bad=false){
+  const ag=state.agents[id]; if(!ag) return;
+  const b=document.createElement("div"); b.className="bubble"+(bad?" bad":""); b.textContent=text;
+  b.style.left=ag.x+"%"; b.style.top=ag.y+"%"; room.appendChild(b); setTimeout(()=>b.remove(),1800);
+}
+function makeAgent(a){
+  const el=document.createElement("div"); el.className="agent sit";
+  el.innerHTML=`<div class="spr"><i class="hair" style="background:${a.hair}"></i><i class="face"></i><i class="eye l"></i><i class="eye r"></i><i class="torso" style="background:${a.body}"></i><i class="visor"></i><i class="arm l"></i><i class="arm r"></i><i class="leg l"></i><i class="leg r"></i></div>`;
+  room.appendChild(el); state.agents[a.id]={el,x:48,y:40,tx:48,ty:40,sit:true,a};
+}
+function seatOf(who){
+  if(state.view==="farm"){ const h=HUTS.find(x=>x.id===who)||HUTS[0]; return {x:h.x+6,y:h.y+8}; }
+  if(state.view==="alpha"){ const d=ALPHA_SEATS.find(x=>x.who===who); return d?{x:d.x+6,y:d.y+6}:{x:46,y:34}; }
+  if(state.view==="night"){ const d=NIGHT_SEATS.find(x=>x.who===who); return d?{x:d.x+6,y:d.y+6}:{x:46,y:34}; }
+  const d=DESKS[state.floor].find(x=>x.who===who); return d?{x:d.x+6,y:d.y+6}:{x:46,y:36};
+}
+function go(id,x,y,sit=false){ const ag=state.agents[id]; if(!ag) return; ag.tx=x; ag.ty=y; ag.sit=sit; }
+function tickMove(){
+  Object.values(state.agents).forEach(ag=>{
+    const dx=ag.tx-ag.x, dy=ag.ty-ag.y;
+    if(Math.hypot(dx,dy)<0.35){ ag.x=ag.tx; ag.y=ag.ty; ag.el.classList.toggle("sit",ag.sit); }
+    else { ag.x+=dx*0.09; ag.y+=dy*0.09; ag.el.classList.remove("sit"); }
+    ag.el.style.left=ag.x+"%"; ag.el.style.top=ag.y+"%";
+  });
+  requestAnimationFrame(tickMove);
+}
+function layout(){
+  room.querySelectorAll(".agent,.desk,.hut").forEach(n=>n.remove()); state.agents={};
+  if(state.view==="farm") HUTS.forEach(h=>{
+    const el=document.createElement("div"); el.className="hut "+h.cls; el.style.left=h.x+"%"; el.style.top=h.y+"%";
+    el.innerHTML=`<div class="roof"></div><div class="tag">${h.id}</div>`; room.appendChild(el);
+  }); else {
+    const seats=state.view==="alpha"?ALPHA_SEATS: state.view==="night"?NIGHT_SEATS:DESKS[state.floor];
+    seats.forEach(d=>{
+      const el=document.createElement("div"); el.className="desk on"; el.style.left=d.x+"%"; el.style.top=d.y+"%";
+      el.innerHTML=`<div class="screen"></div><div class="label">${d.who}</div>`; room.appendChild(el);
+    });
+  }
+  rosterList().forEach(makeAgent);
+  rosterList().forEach(a=>{ const s=seatOf(a.id); go(a.id,s.x,s.y,true); });
+  document.getElementById("roster").innerHTML=rosterList().map(a=>`<div class="seat" id="r-${a.id}"><div class="dot" style="background:${a.color}"></div>${a.id}<span>${a.role}</span></div>`).join("");
+}
+function fillPx(sym, side){
+  const m=mid(sym); const slip=(book.cfg.slipBps/1e4)*(0.6+Math.random()*0.8);
+  return side==="buy" ? m*(1+slip) : m*(1-slip);
+}
+function openFill(t){
+  const px=fillPx(t.sym,t.side); const feeBps=book.cfg.feeBps/1e4; const notional=t.riskUsd; const fee=notional*feeBps;
+  const qty = (notional-fee)/px;
+  if(t.side==="buy"){ if(book.cash<notional){ log("SNIPER","reject "+t.id+" — not enough cash","no"); return false; } book.cash -= notional; }
+  else book.cash += notional-fee;
+  book.feesPaid += fee;
+  const signed = t.side==="buy"? qty : -qty;
+  book.positions.push({id:t.id,sym:t.sym,side:t.side,qty:signed,avg:px,fee,opened:new Date().toISOString()});
+  t.fillPx=px; t.qty=signed; t.fee=fee; t.status="LIVE";
+  log("SNIPER",`PAPER FILL ${t.id} ${t.side} ${t.sym} qty ${Math.abs(signed).toFixed(6)} @ ${px.toFixed(4)} fee $${fee.toFixed(4)}`,"ok");
+  pop("SNIPER", t.side.toUpperCase()+" "+t.sym); persist(); updateBook(); renderPos(); return true;
+}
+function closePos(id){
+  const i=book.positions.findIndex(p=>p.id===id); if(i<0) return;
+  const p=book.positions[i]; const side=p.qty>0?"sell":"buy"; const px=fillPx(p.sym,side);
+  const proceeds=Math.abs(p.qty)*px; const fee=proceeds*(book.cfg.feeBps/1e4); book.feesPaid += fee;
+  if(p.qty>0) book.cash += proceeds-fee; else book.cash -= proceeds+fee;
+  const pnl = p.qty>0 ? (px-p.avg)*p.qty -p.fee -fee : (p.avg-px)*Math.abs(p.qty)-p.fee-fee;
+  book.positions.splice(i,1);
+  log("EXIT",`CLOSE ${id} ${p.sym} @ ${px.toFixed(4)} pnl $${pnl.toFixed(4)}`, pnl>=0?"ok":"no");
+  pop("EXIT",(pnl>=0?"+":"")+"$"+pnl.toFixed(2), pnl<0); persist(); updateBook(); renderPos();
+}
+function proposeTicket(sym, side, riskUsd){
+  const id="GS-"+String(state.seq++).padStart(4,"0");
+  state.ticket={id,sym,side,riskUsd,risk:"OPEN",status:"RISK",venue:book.cfg.venue}; book.tickets++;
+  log("HEAD",`ticket ${id} ${side} ${sym} risk $${riskUsd.toFixed(2)}`); renderPipe(); persist();
+}
+function riskStamp(){
+  const t=state.ticket; if(!t||t.status!=="RISK") return;
+  const cap=equity()*(book.cfg.riskPct/100);
+  if(t.riskUsd>cap+1e-9){ t.risk="KILL"; t.status="DEAD"; log("RISK",t.id+" KILL — over "+book.cfg.riskPct+"% cap","no"); pop("RISK","KILL",true); }
+  else { t.risk="CLEAR"; t.status="WAIT_APPROVE"; log("RISK",t.id+" CLEAR checklist only","ok"); pop("RISK","CLEAR"); log("HEAD",t.id+" waiting APPROVE"); }
+  renderPipe(); persist();
+}
+function approve(){
+  const t=state.ticket; if(!t||t.status!=="WAIT_APPROVE"||t.risk!=="CLEAR") return;
+  if(book.cfg.canWithdraw){ toast("WITHDRAW KEY REJECTED"); return; }
+  if(book.cfg.liveSend){ toast("LIVE SEND IS OFF"); return; }
+  if(openFill(t)){ go("SNIPER",50,60,false); setTimeout(()=>{const s=seatOf("SNIPER"); if(s) go("SNIPER",s.x,s.y,true);},900); }
+  renderPipe();
+}
+function renderPipe(){
+  const t=state.ticket;
+  document.getElementById("approveBtn").disabled=!(t&&t.status==="WAIT_APPROVE"&&t.risk==="CLEAR");
+  document.getElementById("pipe").innerHTML = t
+    ? `<div class="ticket"><b>${t.id}</b> ${t.side} ${t.sym}<br>risk $${t.riskUsd.toFixed(2)} · ${t.venue}<br>RISK <span class="${t.risk==="CLEAR"?"up":t.risk==="KILL"?"dn":""}">${t.risk}</span> · ${t.status}${t.fillPx?`<br>fill ${t.fillPx.toFixed(4)}`:""}</div>`
+    : `<div class="ticket">no ticket</div>`;
+}
+function renderPos(){
+  const box=document.getElementById("pos");
+  if(!book.positions.length){ box.innerHTML='<div class="pos">flat</div>'; return; }
+  box.innerHTML=book.positions.map(p=>{
+    const m=mid(p.sym); const pnl=p.qty*(m-p.avg);
+    return `<div class="pos">${p.id} ${p.sym} ${p.qty>0?"LONG":"SHORT"} ${Math.abs(p.qty).toFixed(5)}<br>avg ${p.avg.toFixed(4)} last ${m.toFixed(4)} <span class="${pnl>=0?"up":"dn"}">${pnl>=0?"+":""}${pnl.toFixed(3)}</span><div><button data-c="${p.id}">FLATTEN</button></div></div>`;
+  }).join("");
+  box.querySelectorAll("button[data-c]").forEach(b=>b.onclick=()=>{ closePos(b.dataset.c); if(state.ticket&&state.ticket.id===b.dataset.c) state.ticket=null; renderPipe(); });
+}
+function updateBook(){
+  const eq=equity(), pnl=eq-book.start;
+  document.getElementById("eq").textContent="$"+eq.toFixed(2);
+  document.getElementById("cashH").textContent="$"+book.cash.toFixed(2);
+  document.getElementById("cash").textContent="VAULT $"+eq.toFixed(2);
+  document.getElementById("refused").textContent=String(book.refused||0);
+  document.getElementById("bought").textContent=String(book.bought||0);
+  const el=document.getElementById("pnl"); el.textContent=(pnl>=0?"+$":"-$")+Math.abs(pnl).toFixed(2); el.style.color=pnl>=0?"var(--green)":"var(--red)";
+}
+function fmt(n){ if(n==null||Number.isNaN(n))return "—"; if(Math.abs(n)>=1000)return n.toLocaleString(undefined,{maximumFractionDigits:2}); if(Math.abs(n)<0.01)return n.toExponential(2); return n.toFixed(2); }
+function renderTickers(){
+  let list;
+  if(state.view==="alpha"||state.view==="night"){
+    list = (state.coins||[]).slice(0,4).map(pumpTag);
+    if(!list.length) list=["PF…"];
+  } else list = MARKETS[state.floor]||MARKETS.CRYPTO;
+  document.getElementById("tickers").innerHTML=list.map(s=>{
+    const p=mid(s); const prev=SEED["_"+s]||p; const cls=p>=prev?"up":"dn"; SEED["_"+s]=p;
+    const fund = state.funding[s];
+    const f = fund!=null ? ` <i>${(fund*100).toFixed(4)}%</i>` : "";
+    return `<div class="tk">${s} <b class="${cls}">${fmt(p)}</b>${f}</div>`;
+  }).join("");
+  const board=document.getElementById("boardRows");
+  const tape=document.getElementById("tapeScroll");
+  if(board){
+    const names=["BTC","ETH","SOL","TSLA","NVDA","SPX","DOGE"].filter(n=>state.prices[n]||SEED[n]);
+    board.innerHTML=names.slice(0,8).map(n=>{
+      const p=mid(n); const prev=SEED["_"+n]||p; const arrow=p>=prev?"▲":"▼";
+      return `<div>${n} ${arrow} ${fmt(p)}</div>`;
+    }).join("");
+  }
+  if(tape){
+    tape.textContent = list.map(s=>s+" "+fmt(mid(s))).join("   ·   ") + "   ·   PAPER DESK · LIVE SEND OFF   ·   ";
+  }
+}
+function setFeed(k, ok, extra){
+  feeds[k] = ok ? "LIVE"+(extra?(" "+extra):"") : "DOWN";
+  const bar=document.getElementById("feedsBar");
+  if(bar) bar.textContent="FEEDS  HL "+feeds.hl+" · BN "+feeds.bn+" · YH "+feeds.yh+" · PF "+feeds.pf+" · DX "+feeds.dx;
+}
+async function pullBinance(){
+  for (const host of ["https://api.binance.com","https://api.binance.us"]) {
+    try {
+      const res=await fetch(host+"/api/v3/ticker/price");
+      if(!res.ok) continue;
+      const data=await res.json();
+      if(!Array.isArray(data)) continue;
+      const map=Object.fromEntries(data.map(x=>[x.symbol,+x.price]));
+      if(map.BTCUSDT) state.prices.BTC=map.BTCUSDT;
+      if(map.ETHUSDT) state.prices.ETH=map.ETHUSDT;
+      if(map.SOLUSDT) state.prices.SOL=map.SOLUSDT;
+      if(map.DOGEUSDT) state.prices.DOGE=map.DOGEUSDT;
+      setFeed("bn", true, host.includes(".us")?"us":"com");
+      return;
+    } catch(_){}
+  }
+  setFeed("bn", false);
+}
+async function pullHL(){
+  try{
+    const hl=await fetch("https://api.hyperliquid.xyz/info",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type:"allMids"})});
+    const mids=await hl.json();
+    if(mids.BTC) state.prices.BTC=+mids.BTC;
+    if(mids.ETH) state.prices.ETH=+mids.ETH;
+    if(mids.SOL) state.prices.SOL=+mids.SOL;
+    setFeed("hl", true);
+  }catch(_){ setFeed("hl", false); }
+  try{
+    const ctx=await fetch("https://api.hyperliquid.xyz/info",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type:"metaAndAssetCtxs"})});
+    const pair=await ctx.json();
+    const uni=pair[0].universe, acts=pair[1];
+    ["BTC","ETH","SOL"].forEach(name=>{
+      const i=uni.findIndex(a=>a.name===name);
+      if(i>=0 && acts[i]){
+        state.funding[name]=+acts[i].funding;
+        state.oi[name]=+acts[i].openInterest;
+        if(acts[i].midPx) state.prices[name]=+acts[i].midPx;
+      }
+    });
+  }catch(_){}
+}
+async function pullYahoo(){
+  const map={TSLA:"TSLA",NVDA:"NVDA",SPX:"%5EGSPC"};
+  let ok=false;
+  for (const [k,sym] of Object.entries(map)){
+    try{
+      const res=await fetch("https://query1.finance.yahoo.com/v8/finance/chart/"+sym+"?interval=1m&range=1d");
+      const j=await res.json();
+      const meta=j.chart.result[0].meta;
+      const px=meta.regularMarketPrice || meta.chartPreviousClose;
+      if(px){ state.prices[k]=+px; ok=true; }
+    }catch(_){}
+  }
+  setFeed("yh", ok);
+}
+function cheapKill(c){
+  if(!c) return "empty packet";
+  const w=brain.weights;
+  if(c.is_banned) return "banned mint";
+  if(w.metadata>=0.7 && !c.image_uri) return "no metadata / no image";
+  if(w.metadata>=0.7 && !c.description) return "no metadata / empty description";
+  if(w.social>=0.7 && !c.twitter && !c.website && !c.telegram) return "no social pulse";
+  if(w.cap>=0.7 && (c.usd_market_cap||c.market_cap_usd||0) < 1000 && (c.reply_count||0)===0) return "no pulse / thin cap";
+  if(c.complete) return "already off curve";
+  if(w.boost>=0.7 && state.boosts[c.mint]) return "paid DexScreener boost — treat as shill tape";
+  return null;
+}
+function gradePaper(){
+  book.positions.forEach(p=>{
+    const m=mid(p.sym); if(!m || !p.avg) return;
+    const pnl=p.qty*(m-p.avg);
+    if(Math.abs(pnl)<0.01) return;
+    if(p._graded) return;
+    if(pnl>0){ brain.win++; talk("COACH", p.sym+" paper up "+pnl.toFixed(2)+" — keep that veto stack"); }
+    else { brain.lose++; brain.weights.metadata=Math.min(2, brain.weights.metadata+0.05); talk("COACH", p.sym+" paper down "+pnl.toFixed(2)+" — tighten metadata/social"); }
+    p._graded=true; brain.fills=brain.win+brain.lose; saveBrain();
+  });
+  renderLearn();
+}
+function ingestCoins(data, src){
+  if(!Array.isArray(data) || !data.length) return false;
+  state.coins=data;
+  data.forEach(c=>{
+    const tag=pumpTag(c);
+    const px=pumpMark(c);
+    if(tag && px) state.prices[tag]=px;
+  });
+  setFeed("pf", true, data.length+" "+src);
+  return true;
+}
+function pairToCoin(p){
+  const b=p.baseToken||{};
+  return {
+    mint:b.address||p.pairAddress,
+    name:b.name||b.symbol,
+    symbol:b.symbol,
+    description:p.info && p.info.websites ? "dex" : "",
+    image_uri:(p.info&&p.info.imageUrl)||"",
+    twitter:"",
+    website:p.url||"",
+    telegram:"",
+    created_timestamp: p.pairCreatedAt || Date.now(),
+    usd_market_cap:+(p.marketCap||p.fdv||0),
+    market_cap_usd:+(p.marketCap||0),
+    reply_count: (p.txns&&p.txns.h1&&(p.txns.h1.buys+p.txns.h1.sells))||0,
+    complete:false, is_banned:false
+  };
+}
+async function pullPump(){
+  try{
+    const res=await fetch("https://frontend-api-v3.pump.fun/coins?offset=0&limit=20&sort=created_timestamp&order=DESC&includeNsfw=false");
+    if(res.ok){
+      const data=await res.json();
+      if(ingestCoins(data, "pump")) return;
+    }
+  }catch(_){}
+  try{
+    const res=await fetch("https://api.dexscreener.com/latest/dex/search?q=pumpfun");
+    const j=await res.json();
+    const pairs=(j.pairs||[]).filter(p=>p.chainId==="solana" && (p.dexId==="pumpfun"||p.dexId==="pumpswap"));
+    const coins=pairs.slice(0,20).map(pairToCoin);
+    if(ingestCoins(coins, "dex-pf")) return;
+  }catch(_){}
+  setFeed("pf", false);
+}
+async function pullDex(){
+  try{
+    const res=await fetch("https://api.dexscreener.com/token-boosts/top/v1");
+    const data=await res.json();
+    const list=Array.isArray(data)?data:(data.data||[]);
+    state.boosts={};
+    list.slice(0,40).forEach(b=>{ if(b.tokenAddress) state.boosts[b.tokenAddress]=true; });
+    setFeed("dx", true, list.length+" boosts");
+  }catch(_){ setFeed("dx", false); }
+}
+async function pullLive(){
+  await Promise.all([pullHL(), pullBinance(), pullYahoo(), pullPump(), pullDex()]);
+  ["BTC","ETH","SOL","DOGE","TSLA","NVDA","SPX"].forEach(k=>{
+    if(state.prices[k]){ (state.series[k]=state.series[k]||[]).push(state.prices[k]); if(state.series[k].length>80) state.series[k].shift(); }
+  });
+  gradePaper();
+  renderTickers(); drawAll(); updateBook(); renderPos();
+}
+function drawChart(c,s,col){
+  const ctx=c.getContext("2d"); const w=c.width=c.clientWidth*2; const h=c.height=c.clientHeight*2;
+  ctx.clearRect(0,0,w,h); if(!s||s.length<2)return;
+  const min=Math.min(...s),max=Math.max(...s),span=max-min||1;
+  ctx.strokeStyle=col; ctx.lineWidth=2; ctx.beginPath();
+  s.forEach((v,i)=>{const x=(i/(s.length-1))*w,y=h-((v-min)/span)*(h-16)-8; i?ctx.lineTo(x,y):ctx.moveTo(x,y);}); ctx.stroke();
+}
+function drawAll(){
+  const names=MARKETS[state.view==="alpha"?"ALPHA":state.floor];
+  names.forEach((n,i)=>document.getElementById("c"+(i+1)+"l").textContent=n);
+  drawChart(document.getElementById("c1"),state.series[names[0]],"#3dff8a");
+  drawChart(document.getElementById("c2"),state.series[names[1]],"#6ad");
+  drawChart(document.getElementById("c3"),state.series[names[2]],"#e8b86d");
+}
+function pulse(){
+  const list=rosterList(); const a=list[Math.floor(Math.random()*list.length)];
+  const s=seatOf(a.id); go(a.id,s.x,s.y,true);
+  const r=document.getElementById("r-"+a.id); if(r) r.classList.add("busy");
+  setTimeout(()=>{ if(r) r.classList.remove("busy"); },1400);
+  if(state.view==="night"){
+    const c = (state.coins && state.coins.length) ? state.coins[book.refused % state.coins.length] : null;
+    const tok = c ? ("$"+(c.symbol||c.name||"UNK")) : ("$WAIT");
+    const mint = c && c.mint ? c.mint.slice(0,6)+"…" : "";
+    const reason = c ? (cheapKill(c) || KILL_REASONS[Math.floor(Math.random()*KILL_REASONS.length)]) : "pump.fun feed still warming";
+    const killer = reason.indexOf("boost")>=0 ? "NARRATIVE" : reason.indexOf("funder")>=0 ? "AUDITOR" : reason.indexOf("curve")>=0 ? "TIMING" : reason.indexOf("checker")>=0 ? "CHECKER" : "MONITOR";
+    const seat = state.agents[killer] ? killer : "MONITOR";
+    book.refused++; brain.seen++; brain.veto++; bumpReason(reason);
+    talk(seat, "no "+tok+" — "+reason);
+    talk("CHECKER", "board "+book.refused+" dead. "+(lastTalk("AUDITOR")||"auditor quiet"));
+    log(seat, "REFUSE "+tok+" "+mint+" — "+reason, "no");
+    pop(seat, "NO", true);
+    renderLearn(); updateBook(); persist(); saveBrain();
+  } else if(state.view==="alpha"){
+    if(!state.ticket){
+      const c=(state.coins&&state.coins[0])||null;
+      if(!c){ log("SEARCH","no pump packet — PF feed empty","no"); }
+      else {
+        const p=pumpPacket(c);
+        const kill=cheapKill(c);
+        brain.seen++;
+        talk("SEARCH", p.tag+" mint "+(p.mint||"").slice(0,6)+" mc "+fmt(p.mc)+" gh "+(p.github?"yes":"no"));
+        log("SEARCH", `PUMP ${p.tag} mint ${ (p.mint||"").slice(0,6)}… mc $${fmt(p.mc)} socials ${p.socials.length} gh ${p.github?"yes":"no"}`);
+        if(kill){ brain.veto++; bumpReason(kill); talk("CHECKER","veto "+p.tag+" — "+kill); talk("RISK","ack checker on "+p.tag); log("CHECKER","veto "+p.tag+" — "+kill,"no"); pop("RISK","KILL",true); book.refused++; renderLearn(); }
+        else {
+          brain.clear++;
+          talk("RISK","checklist on "+p.tag+" — HEAD ticket");
+          talk("HEAD", lastTalk("SEARCH")+" → ticket");
+          proposeTicket(p.tag, "buy", Math.max(0.25, equity()*book.cfg.riskPct/100));
+          pop("SEARCH",p.tag+" packet"); renderLearn(); saveBrain();
+        }
+      }
+    } else if(state.ticket.status==="RISK") riskStamp();
+    else if(state.ticket.status==="WAIT_APPROVE"){ log("SNIPER","blocked — no approve","no"); pop("SNIPER","WAIT",true); }
+  } else if(a.id==="TAPE") log("TAPE","last BTC "+fmt(mid("BTC")));
+  if(Math.random()>0.55){
+    const w=list[Math.floor(Math.random()*list.length)];
+    go(w.id,18+Math.random()*55,18+Math.random()*45,false);
+    setTimeout(()=>{ const s2=seatOf(w.id); go(w.id,s2.x,s2.y,true); },1800);
+  }
+}
+function setView(v){
+  state.view=v; appEl.classList.toggle("farm",v==="farm");
+  document.querySelectorAll(".views button").forEach(b=>b.classList.toggle("on",b.dataset.view===v));
+  document.getElementById("floorBtns").style.display=v==="office"?"flex":"none";
+  document.getElementById("modeTag").textContent="PAPER · "+v.toUpperCase();
+  document.getElementById("hint").textContent = v==="alpha"
+    ? "CLEAR is not a send. APPROVE runs a paper fill with fee + slip. LIVE SEND off."
+    : v==="farm" ? "Work farm. Same paper book underneath."
+    : v==="night" ? "Pump-only refuse board. Public coins list. No wallet."
+    : v==="alpha" ? "Bober SEARCH route, pump names only. Packet → RISK → APPROVE paper. No live swap."
+    : "Office. DISK panel is the local twin of Grok Bot shared files.";
+  layout(); renderTickers();
+}
+function setFloor(f){ state.floor=f; document.querySelectorAll(".floors button").forEach(b=>b.classList.toggle("on",b.dataset.floor===f)); layout(); renderTickers(); }
+function diskText(){
+  return JSON.stringify({
+    "keys.local.json": { venue:book.cfg.venue, apiKey: book.cfg.apiKey? book.cfg.apiKey.slice(0,4)+"…":"", canWithdraw:false, liveSend:false },
+    "tickets.json": state.ticket, "positions.json": book.positions,
+    "journal.json": book.journal.slice(0,6),
+    "book.json": { cash:book.cash, equity:equity(), feesPaid:book.feesPaid, start:book.start, refused:book.refused, bought:book.bought }
+  }, null, 2);
+}
+document.querySelectorAll(".views button").forEach(b=>b.onclick=()=>setView(b.dataset.view));
+document.querySelectorAll(".floors button").forEach(b=>b.onclick=()=>setFloor(b.dataset.floor));
+document.getElementById("approveBtn").onclick=approve;
+document.getElementById("setBtn").onclick=()=>{
+  document.getElementById("venue").value=book.cfg.venue;
+  document.getElementById("startCash").value=book.start;
+  document.getElementById("riskPct").value=book.cfg.riskPct;
+  document.getElementById("feeBps").value=book.cfg.feeBps;
+  document.getElementById("slipBps").value=book.cfg.slipBps;
+  document.getElementById("apiKey").value=book.cfg.apiKey||"";
+  document.getElementById("watchAddr").value=book.cfg.watchAddr||"";
+  document.getElementById("setModal").classList.add("on");
+};
+document.getElementById("closeSet").onclick=()=>document.getElementById("setModal").classList.remove("on");
+function looksSecret(s){
+  const t=(s||"").trim();
+  if(!t) return false;
+  if(/\b(seed|mnemonic|private|secret)\b/i.test(t)) return true;
+  if(t.startsWith("[") || t.includes(",")) return true;
+  if(/^[0-9a-fA-F]{64}$/.test(t)) return true;
+  if(t.length>50) return true;
+  return false;
+}
+function looksPub(s){
+  const t=(s||"").trim();
+  return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(t);
+}
+document.getElementById("saveKeys").onclick=()=>{
+  if(document.getElementById("canWd").value==="yes"){ toast("REJECTED — withdraw enabled"); log("SYSTEM","withdraw key refused","no"); return; }
+  const watch=document.getElementById("watchAddr").value.trim();
+  if(watch && looksSecret(watch)){ toast("REJECTED — that looks like a secret"); log("SYSTEM","secret rejected","no"); return; }
+  if(watch && !looksPub(watch)){ toast("REJECTED — public address only"); return; }
+  book.cfg.venue=document.getElementById("venue").value;
+  book.cfg.riskPct=+document.getElementById("riskPct").value;
+  book.cfg.feeBps=+document.getElementById("feeBps").value;
+  book.cfg.slipBps=+document.getElementById("slipBps").value;
+  book.cfg.apiKey=document.getElementById("apiKey").value.trim();
+  book.cfg.watchAddr=watch;
+  book.cfg.canWithdraw=false; book.cfg.liveSend=false; persist();
+  toast(watch?("WATCH "+watch.slice(0,4)+"…"+watch.slice(-4)):"SAVED · no spend key");
+  document.getElementById("setModal").classList.remove("on");
+  log("SYSTEM","keys saved · live send still off · watch "+(watch?watch.slice(0,6)+"…":"none"));
+};
+document.getElementById("diskBtn").onclick=()=>{ document.getElementById("diskPre").textContent=diskText(); document.getElementById("diskModal").classList.add("on"); };
+document.getElementById("closeDisk").onclick=()=>document.getElementById("diskModal").classList.remove("on");
+document.getElementById("exportJ").onclick=()=>{
+  const blob=new Blob([JSON.stringify({cash:book.cash,equity:equity(),feesPaid:book.feesPaid,positions:book.positions,journal:book.journal,exported:new Date().toISOString()},null,2)],{type:"application/json"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="grokstreet-journal.json"; a.click();
+};
+document.getElementById("resetBook").onclick=()=>{
+  book.cash=50; book.start=50; book.positions=[]; book.feesPaid=0; state.ticket=null; persist(); updateBook(); renderPos(); renderPipe(); toast("BOOK RESET");
+};
+document.getElementById("ticketBtn").onclick=()=>{
+  document.getElementById("tRisk").value=(equity()*book.cfg.riskPct/100).toFixed(2);
+  document.getElementById("tixModal").classList.add("on");
+};
+document.getElementById("closeTix").onclick=()=>document.getElementById("tixModal").classList.remove("on");
+document.getElementById("openTix").onclick=()=>{
+  proposeTicket(document.getElementById("tMkt").value, document.getElementById("tSide").value, +document.getElementById("tRisk").value);
+  document.getElementById("tixModal").classList.remove("on"); setView("alpha");
+};
+setView("office"); tickMove(); pullLive(); updateBook(); renderPos(); renderPipe();
+setInterval(()=>{ document.getElementById("clock").textContent=new Date().toLocaleTimeString("en-GB",{hour12:false}); },1000);
+setInterval(pullLive,5000); setInterval(pulse,2600);
+log("SYSTEM","v0.6 desk chat + paper learn loop · send still OFF");
+log("HEAD","approve is the only path to a fill");
+(function replayChat(){
+  const box=document.getElementById("chat"); if(!box) return;
+  (brain.chat||[]).slice(0,12).reverse().forEach(c=>{
+    const row=document.createElement("div"); row.className="log";
+    row.innerHTML=`<span class="who">${c.who}</span> ${c.text}`;
+    box.prepend(row);
+  });
+})();
+renderLearn();
+</script>
+</body>
+</html>

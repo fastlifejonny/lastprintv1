@@ -1,0 +1,23 @@
+{
+  "note": "Copy to keys.local.json. Never commit. Pump JWT does not belong here.",
+  "venue": "paper",
+  "pumpfun": {
+    "needed": false,
+    "reason": "public coins list needs no JWT; a JWT is a trading session"
+  },
+  "xai": {
+    "apiKey": "xai-…",
+    "use": "Grok agents only, not HTML send"
+  },
+  "binance": {
+    "apiKey": "",
+    "secret": "",
+    "permissions": ["spot_read"],
+    "canWithdraw": false,
+    "testnet": true
+  },
+  "hyperliquid": {
+    "agentWallet": "",
+    "network": "testnet"
+  }
+}

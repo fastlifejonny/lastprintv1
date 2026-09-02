@@ -1,0 +1,41 @@
+{
+  "url": "http://127.0.0.1:8081/",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "GROKSTREET",
+      "hasCanvas": false,
+      "bodyTextLen": 44,
+      "bodyTextHash": "b6d1d6a923c8f0132f34cbecb0e5f2e31b85593d97f0049dfbe1c34d7b07562e",
+      "bodyTextPrefix": "GROKSTREET paper trading pit — live send off",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-built.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "GROKSTREET",
+      "hasCanvas": true,
+      "bodyTextLen": 2793,
+      "bodyTextHash": "ec244a4f8e777d11e1d4c94bf292fc2001c3ca5b8fb8e934c2acedc2a91865a0",
+      "bodyTextPrefix": "GROKSTREET paper trading pit — live send off GROKSTREET PAPER · ",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-built-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/app-builder-built.json",
+  "divergesFromBaseline": true,
+  "baselineReasons": [
+    "desktop: canvas disappeared",
+    "desktop: body text collapsed (2804 -> 44 chars)"
+  ]
+}

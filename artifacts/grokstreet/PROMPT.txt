@@ -1,0 +1,31 @@
+Build GROKSTREET, a single-page pixel trading floor.
+
+VIEWS: OFFICE, FARM, ALPHA, NIGHT.
+
+MONEY: paper broker only. Start cash $50. Fees + slippage on fills.
+APPROVE is the only fill path. Live send permanently OFF.
+
+WALLET: one field "Watch address (public Solana only)".
+Save if it looks like a public pubkey (base58, 32-44 chars, not a JSON array, not hex 64, not the words seed/private/mnemonic).
+If it looks like a secret, show REJECTED and do not store it.
+Never add Phantom, WalletAdapter, or a private-key box.
+Show the watch address in the header as a label only. It cannot send.
+
+TAPE (no API keys):
+- POST https://api.hyperliquid.xyz/info body {"type":"allMids"} and {"type":"metaAndAssetCtxs"} for BTC ETH SOL + funding
+- https://api.binance.com/api/v3/ticker/price fallback https://api.binance.us/api/v3/ticker/price
+- https://api.dexscreener.com/token-boosts/top/v1
+- https://api.dexscreener.com/latest/dex/search?q=pumpfun
+- try https://frontend-api-v3.pump.fun/coins?offset=0&limit=20&sort=created_timestamp&order=DESC&includeNsfw=false
+  if that fails, use DexScreener pumpfun/pumpswap Solana pairs
+
+ALPHA + NIGHT use pump names only.
+SEARCH logs ticker, mint stub, mcap, socials, github yes/no if url contains github.com.
+Veto: no image, empty description, banned, paid boost, thin cap and no replies.
+RISK: max 0.5% equity. WAIT_APPROVE. Human APPROVE. Paper fill.
+
+UI: dark wood office, tiny pixel agents, Press Start 2P + IBM Plex Mono.
+Header: tickers, REFUSED, BOUGHT, CASH, EQ, P&L, FEEDS HL/BN/YH/PF/DX LIVE or DOWN.
+Rail: roster, ticket, positions, DESK CHAT, LEARN (seen/veto/clear/win/lose + top reasons), journal.
+Persist book, brain, watchAddress in localStorage.
+Disclaimer visible: paper desk, not advice, not a live sniper.
